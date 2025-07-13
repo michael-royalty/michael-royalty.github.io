@@ -42,4 +42,38 @@ What variables do we need?
 It should be equal to the length to the longest outlying point.
 While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius,
 As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.
-3: Extents
+3: Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.
+4: Half Height and Radius (floats) -- Scale * Half Height & Radius. Needed for cylinders.
+5: CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input.
+6: Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.
+7: Size (Integer) -- This will be used to tell particles which neighbor grids they should populate and which collisions they should refer to.
+
+Editing the intra-particle reader is simple.
+1: Copy the base reader scratchpad into another directory and rename it.
+2: Edit the scratch and add these input pins.
+3: Edit the HLSL and add this code block
+
+HLSL CODE HERE
+
+Usage:
+Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)
+Populate the three neighbor grids based on the Size variable
+Set up one intra-particle reader (or three in the small emitter, two in the medium, and one in the large if you're using 3 separate emitters. Possibly you can set these up at the system level instead)
+Set up the three intra-particle checks.
+Set up the medium to large Shape check
+Set up the small to medium Shape check
+
+You may need to limit the max speed of smaller particles, or make your box shapes thicker, if you see particles going into boxes.
+
+Improvements:
+We can make it easier to set up multiple tiers.
+Stage 1 (Manual): combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.
+Stage 2 (Automatic): combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want.
+
+Add variables for efficiency and ease of use.
+1. MaxCollisionRadius (+CollisionType). Used by boxes and cylinders for early out. Used as CollisionRadius for spheres.
+2. Extents. Vector3 used by boxes.
+3. HalfHeight and Radius. Vector2 used by cylinders.
+4. Orientation. Float4 used by boxes and cylinders.
+5. User Parameter Arrays to store mesh-level CollisionRadius, ShapeType, ShapeHalfHeight, and ShapeExtents. Then we can multiply particle scale by these to get the actual values. Simplifies input into Niagara.
+6. Mesh (Integer) -- Used to refer to the right element in the User Parameter Arrays
