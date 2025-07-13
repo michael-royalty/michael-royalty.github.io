@@ -1,0 +1,45 @@
+You can enable precise collisions in Niagara using HLSL and modifying the base PDB intra-particle collisions scratchpad to support it.
+
+What's supported:
+Spherical particles checking against shaped particles for collision
+
+What's not supported:
+Shaped particles checking against shaped particles for collision
+Shaped particles checking against spherical particles for collision
+
+Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shaped  particles treat shaped particles as unyielding.
+
+All shaped particles should treat each other as spherical and use the regular intra-pdb collisions.
+
+You can make tiers of shaped particles.
+
+Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.
+
+Example of setting up multiple grids:
+
+Tier 2 (Largest): Use a grid with large extents -- extents equal to double the largest particle's length from center to outermost point.
+These particles will check the Tier 2 grid for regular intra-particle collision.
+
+Tier 1 (Medium): Use a grid with medium extents
+These particles will check the tier 2 grid for shaped intra-particle collision.
+These particles will check the tier 1 grid for regular intra-particle collision.
+
+Tier 0 (Small): 
+These particles will check the tier 2 grid for shaped intra-particle collision.
+These particles will check the tier 1 grid for shaped intra-particle collision.
+Theae particles will check the tier 0 grid for regular intra-particle collision.
+
+For cleanliness and efficiency of collisions, you should check all regular collisions first to get a baseline of where objects should be before they're moved by larger objects.
+Then check the Tier 1 collisions against the shaped Tier 2 grid.
+Lastly check the Tier 2 collisions against the shaped Tier 1 grid.
+
+This lets us get smaller objects to an approximately correct position before the larger objects act on them.
+It will result in smaller objects overlapping, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.
+
+What variables do we need?
+1: Collision type. Box, Cylinder, or Sphere. Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.
+2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
+It should be equal to the length to the longest outlying point.
+While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius,
+As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.
+3: Extents
