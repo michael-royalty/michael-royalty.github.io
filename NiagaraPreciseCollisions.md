@@ -101,14 +101,14 @@ Editing the intra-particle reader is simple.
 
 You may need to limit the max speed of smaller particles, or make your box shapes thicker, if you see particles going into boxes.
 
-## Future Improvements:
-# We can make it easier to set up multiple tiers.
+# Future Improvements:
+## We can make it easier to set up multiple tiers.
 <ul>
   <li>Stage 1 (Manual): combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.</li>
   <li>Stage 2 (Automatic): combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want.</li>
 </ul>
 
-# Add variables for efficiency and ease of use.
+## Add variables for efficiency and ease of use.
 <ol>
   <li>MaxCollisionRadius (+CollisionType). Used by boxes and cylinders for early out. Used as CollisionRadius for spheres.</li>
   <li>Extents. Vector3 used by boxes.</li>
