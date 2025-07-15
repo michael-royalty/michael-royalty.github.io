@@ -9,11 +9,15 @@ title: Niagara precise shaped collisions
 You can enable precise collisions in Niagara using HLSL and modifying the base PDB intra-particle collisions scratchpad to support it.
 
 ## What's supported:
-Spherical particles checking against shaped particles for collision
+<ul>
+  <li>Spherical particles checking against shaped particles for collision</li>
+</ul>
 
 ## What's not supported:
-Shaped particles checking against shaped particles for collision
-Shaped particles checking against spherical particles for collision
+<ul>
+  <li>Shaped particles checking against shaped particles for collision</li>
+  <li>Shaped particles checking against spherical particles for collision</li>
+</ul>
 
 ## Overview
 
@@ -25,33 +29,43 @@ You can make tiers of shaped particles.
 
 Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.
 
-Example of setting up multiple grids:
+##Example of setting up multiple grids:
 
 Tier 2 (Largest): Use a grid with large extents -- extents equal to double the largest particle's length from center to outermost point.
-These particles will check the Tier 2 grid for regular intra-particle collision.
+<ul>
+  <li>These particles will check the Tier 2 grid for regular intra-particle collision.</li>
+</ul>
 
 Tier 1 (Medium): Use a grid with medium extents
-These particles will check the tier 2 grid for shaped intra-particle collision.
-These particles will check the tier 1 grid for regular intra-particle collision.
+<ul>
+  <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
+  <li>These particles will check the tier 1 grid for regular intra-particle collision.</li>
+</ul>
 
-Tier 0 (Small): 
-These particles will check the tier 2 grid for shaped intra-particle collision.
-These particles will check the tier 1 grid for shaped intra-particle collision.
-Theae particles will check the tier 0 grid for regular intra-particle collision.
+Tier 0 (Small):
+<ul>
+  <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
+  <li>These particles will check the tier 1 grid for shaped intra-particle collision.</li>
+  <li>These particles will check the tier 0 grid for regular intra-particle collision.</li>
+</ul>
 
-For cleanliness and efficiency of collisions, you should check all regular collisions first to get a baseline of where objects should be before they're moved by larger objects.
-Then check the Tier 1 collisions against the shaped Tier 2 grid.
-Lastly check the Tier 2 collisions against the shaped Tier 1 grid.
+For cleanliness and efficiency of collisions, you should check collisions in the following order.
+<ul>
+  <li>All same tiers against same tiers.</li>
+  <li>Small (Tier 3) against Medium (Tier 2)</li>
+  <li>Medium (Tier 2) against Large (Tier 1)</li>
+</ul>
 
-This lets us get smaller objects to an approximately correct position before the larger objects act on them.
-It will result in smaller objects overlapping, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.
+This lets us get smaller objects to an approximately correct position before the larger objects act on them. The larger particles will then have priority, pushing smaller particles out of the way. This may result in smaller objects overlapping each other, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.
+<br>
+If precision matters more than performance you can put all of these in the same update and set it to simulate multiple times. I still suggest running them in this order.
 
 ## What variables do we need?
 <ul>
   <li>1: Collision type. Box, Cylinder, or Sphere. Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
-  <li>2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
-It should be equal to the length to the longest outlying point.
-While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius,
+  <li>2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.<br>
+It should be equal to the length to the longest outlying point.<br>
+While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius.<br>
 As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.</li>
 <li>3: Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.</li>
 <li>4: Half Height and Radius (floats) -- Scale * Half Height & Radius. Needed for cylinders.</li>
@@ -67,22 +81,26 @@ Editing the intra-particle reader is simple.
   <li>3: Edit the HLSL and add this code block</li>
 </ul>
 
-<details><script src="https://gist.github.com/michael-royalty/2ea2279b0f605e758b2f58b993052858.js"></script></details>
+<details><summary>HLSL</summary><p><script src="https://gist.github.com/michael-royalty/2ea2279b0f605e758b2f58b993052858.js"></script></p></details>
 
 ## Usage:
-Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)
-Populate the three neighbor grids based on the Size variable
-Set up one intra-particle reader (or three in the small emitter, two in the medium, and one in the large if you're using 3 separate emitters. Possibly you can set these up at the system level instead)
-Set up the three intra-particle checks.
-Set up the medium to large Shape check
-Set up the small to medium Shape check
+<ul>
+  <li>Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)</li>
+  <li>Populate the three neighbor grids based on the Size variable</li>
+  <li>Set up one intra-particle reader (or three in the small emitter, two in the medium, and one in the large if you're using 3 separate emitters. Possibly you can set these up at the system level instead)</li>
+  <li>Set up the three intra-particle checks</li>
+  <li>Set up the medium to large Shape check</li>
+  <li>Set up the small to medium Shape check</li>
+</ul>
 
 You may need to limit the max speed of smaller particles, or make your box shapes thicker, if you see particles going into boxes.
 
 ## Future Improvements:
 # We can make it easier to set up multiple tiers.
-Stage 1 (Manual): combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.
-Stage 2 (Automatic): combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want.
+<ul>
+  <li>Stage 1 (Manual): combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.</li>
+  <li>Stage 2 (Automatic): combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want.</li>
+</ul>
 
 # Add variables for efficiency and ease of use.
 <ul>
