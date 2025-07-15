@@ -66,28 +66,28 @@ If precision matters more than performance you can put all of these in the same 
 
 ## What variables do we need?
 <ol>
-  <li>Collision type. Box, Cylinder, or Sphere. Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
-  <li>Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
+  <li>CollisionType (int) -- Box (2), Cylinder (1), or Sphere (0). Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
+  <li>MaxCollisionRadius (float) -- This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
   <ul>
-    <li>It should be equal to the length to the longest outlying point.</li>
+    <li>It should be equal to the length to the longest outlying point -- From the center of extents to a corner</li>
     <li>While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius.</li>
     <li>As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.</li>
   </ul>
   <li>Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.</li>
-  <li>Half Height and Radius (floats) -- Scale * Half Height & Radius. Needed for cylinders.</li>
-  <li>CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input.</li>
+  <li>Half Height (float) -- Half height of a cylinder</li>
+  <li>CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input. Also used for Cylinder radius.</li>
   <li>Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.</li>
-  <li>Size (Integer) -- This will be used to tell particles which neighbor grids they should populate and which collisions they should refer to.</li>
 </ol>
 
 Editing the intra-particle reader is simple.
 <ol>
   <li>Copy the base reader scratchpad into another directory and rename it.</li>
   <li>Edit the scratch and add these input pins.</li>
-  <li>Edit the HLSL and add this code block</li>
+  <li>Edit the HLSL and add this code block<br>
+    <details><summary>HLSL</summary><p><script src="https://gist.github.com/michael-royalty/2ea2279b0f605e758b2f58b993052858.js"></script></p></details>
+  </li>
 </ol>
 
-<details><summary>HLSL</summary><p><script src="https://gist.github.com/michael-royalty/2ea2279b0f605e758b2f58b993052858.js"></script></p></details>
 
 ## Usage:
 <ol>
