@@ -1,16 +1,16 @@
-## Niagara precise shaped collisions
-# Updating the pre-existing HLSL for Intra-Particle Collisions to add support for cubes and cylinders.
+# Niagara precise shaped collisions
+## Updating the pre-existing HLSL for Intra-Particle Collisions to add support for cubes and cylinders.
 
 You can enable precise collisions in Niagara using HLSL and modifying the base PDB intra-particle collisions scratchpad to support it.
 
-# What's supported:
+## What's supported:
 Spherical particles checking against shaped particles for collision
 
-# What's not supported:
+## What's not supported:
 Shaped particles checking against shaped particles for collision
 Shaped particles checking against spherical particles for collision
 
-# Overview
+## Overview
 
 Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shaped  particles treat shaped particles as unyielding.
 
@@ -41,7 +41,7 @@ Lastly check the Tier 2 collisions against the shaped Tier 1 grid.
 This lets us get smaller objects to an approximately correct position before the larger objects act on them.
 It will result in smaller objects overlapping, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.
 
-# What variables do we need?
+## What variables do we need?
 1: Collision type. Box, Cylinder, or Sphere. Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.
 2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
 It should be equal to the length to the longest outlying point.
@@ -60,7 +60,7 @@ Editing the intra-particle reader is simple.
 
 <script src="https://gist.github.com/michael-royalty/2ea2279b0f605e758b2f58b993052858.js"></script>
 
-# Usage:
+## Usage:
 Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)
 Populate the three neighbor grids based on the Size variable
 Set up one intra-particle reader (or three in the small emitter, two in the medium, and one in the large if you're using 3 separate emitters. Possibly you can set these up at the system level instead)
@@ -70,8 +70,8 @@ Set up the small to medium Shape check
 
 You may need to limit the max speed of smaller particles, or make your box shapes thicker, if you see particles going into boxes.
 
-# Improvements:
-We can make it easier to set up multiple tiers.
+## Future Improvements:
+# We can make it easier to set up multiple tiers.
 Stage 1 (Manual): combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.
 Stage 2 (Automatic): combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want.
 
