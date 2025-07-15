@@ -91,11 +91,11 @@ You can enable precise collisions in Niagara using HLSL and modifying the base P
 
 Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shaped  particles treat shaped particles as unyielding.<br><br>
 
-All shaped particles should treat each other as spherical and use the regular intra-pdb collisions.<br><br>
+All shaped particles should treat each other as spherical and use the regular intra-pdb collisions.<br>
 
-You can make tiers of shaped particles.<br><br>
+You can make tiers of shaped particles.<br>
 
-Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.<br><br>
+Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.<br>
   
 <h2 id="grids">Example of setting up multiple grids:</h2>
 
