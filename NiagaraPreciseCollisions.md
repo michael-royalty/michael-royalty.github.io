@@ -21,13 +21,13 @@ You can enable precise collisions in Niagara using HLSL and modifying the base P
 
 ## Overview
 
-Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shaped  particles treat shaped particles as unyielding.
+Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shaped  particles treat shaped particles as unyielding.<br><br>
 
-All shaped particles should treat each other as spherical and use the regular intra-pdb collisions.
+All shaped particles should treat each other as spherical and use the regular intra-pdb collisions.<br><br>
 
-You can make tiers of shaped particles.
+You can make tiers of shaped particles.<br><br>
 
-Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.
+Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.<br><br>
 
 ##Example of setting up multiple grids:
 
@@ -56,22 +56,23 @@ For cleanliness and efficiency of collisions, you should check collisions in the
   <li>Medium (Tier 2) against Large (Tier 1)</li>
 </ul>
 
-This lets us get smaller objects to an approximately correct position before the larger objects act on them. The larger particles will then have priority, pushing smaller particles out of the way. This may result in smaller objects overlapping each other, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.
-<br>
+This lets us get smaller objects to an approximately correct position before the larger objects act on them. The larger particles will then have priority, pushing smaller particles out of the way. This may result in smaller objects overlapping each other, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.<br><br>
 If precision matters more than performance you can put all of these in the same update and set it to simulate multiple times. I still suggest running them in this order.
 
 ## What variables do we need?
 <ul>
   <li>1: Collision type. Box, Cylinder, or Sphere. Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
-  <li>2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.<br>
-It should be equal to the length to the longest outlying point.<br>
-While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius.<br>
-As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.</li>
-<li>3: Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.</li>
-<li>4: Half Height and Radius (floats) -- Scale * Half Height & Radius. Needed for cylinders.</li>
-<li>5: CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input.</li>
-<li>6: Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.</li>
-<li>7: Size (Integer) -- This will be used to tell particles which neighbor grids they should populate and which collisions they should refer to.</li>
+  <li>2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
+  <ul>
+    <li>It should be equal to the length to the longest outlying point.</li>
+    <li>While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius.</li>
+    <li>As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.</li>
+  </ul>
+  <li>3: Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.</li>
+  <li>4: Half Height and Radius (floats) -- Scale * Half Height & Radius. Needed for cylinders.</li>
+  <li>5: CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input.</li>
+  <li>6: Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.</li>
+  <li>7: Size (Integer) -- This will be used to tell particles which neighbor grids they should populate and which collisions they should refer to.</li>
 </ul>
 
 Editing the intra-particle reader is simple.
