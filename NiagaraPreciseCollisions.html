@@ -4,24 +4,24 @@
   </head>
 
   <body>
-# Niagara precise shaped collisions
+<h1>Niagara precise shaped collisions</h1>
 
-## Updating the pre-existing HLSL for Intra-Particle Collisions to add support for cubes and cylinders.
+<h2>Updating the pre-existing HLSL for Intra-Particle Collisions to add support for cubes and cylinders.</h2>
 
 You can enable precise collisions in Niagara using HLSL and modifying the base PDB intra-particle collisions scratchpad to support it.
 
-## What's supported:
+<h2>What's supported:</h2>
 <ul>
   <li>Spherical particles checking against shaped particles for collision</li>
 </ul>
 
-## What's not supported:
+<h2>What's not supported:</h2>
 <ul>
   <li>Shaped particles checking against shaped particles for collision</li>
   <li>Shaped particles checking against spherical particles for collision</li>
 </ul>
 
-<nav aria-label = "Overview">
+<h2>Overview</h2>
 
 Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shaped  particles treat shaped particles as unyielding.<br><br>
 
@@ -30,9 +30,8 @@ All shaped particles should treat each other as spherical and use the regular in
 You can make tiers of shaped particles.<br><br>
 
 Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.<br><br>
-</nav>
   
-<nav aria-label = "Example of setting up multiple grids:">
+<h2>Example of setting up multiple grids:</h2>
 
 <ul>
   <li>Tier 2 (Largest): Use a grid with large extents -- extents equal to double the largest particle's length from center to outermost point.</li>
@@ -67,9 +66,7 @@ For cleanliness and efficiency of collisions, you should check collisions in the
 This lets us get smaller objects to an approximately correct position before the larger objects act on them. The larger particles will then have priority, pushing smaller particles out of the way. This may result in smaller objects overlapping each other, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.<br><br>
 If precision matters more than performance you can put all of these in the same update and set it to simulate multiple times. I still suggest running them in this order.
 
-</nav>
-  
-<nav aria-label = "What variables do we need?">
+<h2>What variables do we need?</h2>
 <ol>
   <li>CollisionType (int) -- Box (2), Cylinder (1), or Sphere (0). Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
   <li>MaxCollisionRadius (float) -- This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
@@ -83,10 +80,8 @@ If precision matters more than performance you can put all of these in the same 
   <li>CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input. Also used for Cylinder radius.</li>
   <li>Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.</li>
 </ol>
-
-</nav>
   
-<nav aria-label = "Editing the intra-particle reader">
+<h2>Editing the intra-particle reader</h2>
   
 Editing the intra-particle reader is simple.
 <ol>
@@ -98,7 +93,7 @@ Editing the intra-particle reader is simple.
 </ol>
 </nav>
 
-<nav aria-label = "Usage:">
+<h2>Usage</h2>
 <ol>
   <li>Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)</li>
   <li>Populate the three neighbor grids based on the Size variable</li>
@@ -109,16 +104,15 @@ Editing the intra-particle reader is simple.
 </ol>
 
 You may need to limit the max speed of smaller particles, or make your box shapes thicker, if you see particles going into boxes.
-</nav>
   
-<nav aria-label = "Future Improvements:">
-## We can make it easier to set up multiple tiers.
+<h1>Future Improvements</h1>
+</h2>We can make it easier to set up multiple tiers.</h2>
 <ul>
   <li>Stage 1 (Manual): combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.</li>
   <li>Stage 2 (Automatic): combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want.</li>
 </ul>
 
-## Add variables for efficiency and ease of use.
+<h2>Add variables for efficiency and ease of use.</h2>
 <ol>
   <li>MaxCollisionRadius (+CollisionType). Used by boxes and cylinders for early out. Used as CollisionRadius for spheres.</li>
   <li>Extents. Vector3 used by boxes.</li>
@@ -127,6 +121,5 @@ You may need to limit the max speed of smaller particles, or make your box shape
   <li>User Parameter Arrays to store mesh-level CollisionRadius, ShapeType, ShapeHalfHeight, and ShapeExtents. Then we can multiply particle scale by these to get the actual values. Simplifies input into Niagara.</li>
   <li>Mesh (Integer) -- Used to refer to the right element in the User Parameter Arrays</li>
 </ol>
-</nav>
 </body>
 </html>
