@@ -47,21 +47,25 @@ This lets us get smaller objects to an approximately correct position before the
 It will result in smaller objects overlapping, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.
 
 ## What variables do we need?
-1: Collision type. Box, Cylinder, or Sphere. Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.
-2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
+<ul>
+  <li>1: Collision type. Box, Cylinder, or Sphere. Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
+  <li>2: Max Collision Radius. This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
 It should be equal to the length to the longest outlying point.
 While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius,
-As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.
-3: Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.
-4: Half Height and Radius (floats) -- Scale * Half Height & Radius. Needed for cylinders.
-5: CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input.
-6: Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.
-7: Size (Integer) -- This will be used to tell particles which neighbor grids they should populate and which collisions they should refer to.
+As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.</li>
+<li>3: Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.</li>
+<li>4: Half Height and Radius (floats) -- Scale * Half Height & Radius. Needed for cylinders.</li>
+<li>5: CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input.</li>
+<li>6: Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.</li>
+<li>7: Size (Integer) -- This will be used to tell particles which neighbor grids they should populate and which collisions they should refer to.</li>
+</ul>
 
 Editing the intra-particle reader is simple.
-1: Copy the base reader scratchpad into another directory and rename it.
-2: Edit the scratch and add these input pins.
-3: Edit the HLSL and add this code block
+<ul>
+  <li>1: Copy the base reader scratchpad into another directory and rename it.</li>
+  <li>2: Edit the scratch and add these input pins.</li>
+  <li>3: Edit the HLSL and add this code block</li>
+</ul>
 
 <details><script src="https://gist.github.com/michael-royalty/2ea2279b0f605e758b2f58b993052858.js"></script></details>
 
@@ -81,9 +85,11 @@ Stage 1 (Manual): combine the intra-particle reader to take multiple particle re
 Stage 2 (Automatic): combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want.
 
 # Add variables for efficiency and ease of use.
-1. MaxCollisionRadius (+CollisionType). Used by boxes and cylinders for early out. Used as CollisionRadius for spheres.
-2. Extents. Vector3 used by boxes.
-3. HalfHeight and Radius. Vector2 used by cylinders.
-4. Orientation. Float4 used by boxes and cylinders.
-5. User Parameter Arrays to store mesh-level CollisionRadius, ShapeType, ShapeHalfHeight, and ShapeExtents. Then we can multiply particle scale by these to get the actual values. Simplifies input into Niagara.
-6. Mesh (Integer) -- Used to refer to the right element in the User Parameter Arrays
+<ul>
+  <li>1. MaxCollisionRadius (+CollisionType). Used by boxes and cylinders for early out. Used as CollisionRadius for spheres.</li>
+  <li>2. Extents. Vector3 used by boxes.</li>
+  <li>3. HalfHeight and Radius. Vector2 used by cylinders.</li>
+  <li>4. Orientation. Float4 used by boxes and cylinders.</li>
+  <li>5. User Parameter Arrays to store mesh-level CollisionRadius, ShapeType, ShapeHalfHeight, and ShapeExtents. Then we can multiply particle scale by these to get the actual values. Simplifies input into Niagara.</li>
+  <li>6. Mesh (Integer) -- Used to refer to the right element in the User Parameter Arrays</li>
+</ul>
