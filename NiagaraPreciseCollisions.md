@@ -1,4 +1,9 @@
+---
+layout: default
+title: Niagara precise shaped collisions
+---
 # Niagara precise shaped collisions
+
 ## Updating the pre-existing HLSL for Intra-Particle Collisions to add support for cubes and cylinders.
 
 You can enable precise collisions in Niagara using HLSL and modifying the base PDB intra-particle collisions scratchpad to support it.
