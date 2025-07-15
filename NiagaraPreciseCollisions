@@ -53,7 +53,7 @@ Editing the intra-particle reader is simple.
 2: Edit the scratch and add these input pins.
 3: Edit the HLSL and add this code block
 
-HLSL CODE HERE
+<script src="https://gist.github.com/michael-royalty/2ea2279b0f605e758b2f58b993052858.js"></script>
 
 Usage:
 Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)
