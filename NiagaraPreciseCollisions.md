@@ -31,30 +31,35 @@ Neighbor Grids should be sized based on particle size. If a grid is too large, y
 
 ##Example of setting up multiple grids:
 
-Tier 2 (Largest): Use a grid with large extents -- extents equal to double the largest particle's length from center to outermost point.
 <ul>
-  <li>These particles will check the Tier 2 grid for regular intra-particle collision.</li>
-</ul>
-
-Tier 1 (Medium): Use a grid with medium extents
-<ul>
-  <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
-  <li>These particles will check the tier 1 grid for regular intra-particle collision.</li>
-</ul>
-
-Tier 0 (Small):
-<ul>
-  <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
-  <li>These particles will check the tier 1 grid for shaped intra-particle collision.</li>
-  <li>These particles will check the tier 0 grid for regular intra-particle collision.</li>
+  <li>Tier 2 (Largest): Use a grid with large extents -- extents equal to double the largest particle's length from center to outermost point.</li>
+  <ul>
+    <li>These particles will check the Tier 2 grid for regular intra-particle collision.</li>
+  </ul>
+  <li>Tier 1 (Medium): Use a grid with medium extents</li>
+    <ul>
+    <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
+    <li>These particles will check the tier 1 grid for regular intra-particle collision.</li>
+  </ul>
+  <li>Tier 0 (Small)</li>li>
+  <ul>
+    <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
+    <li>These particles will check the tier 1 grid for shaped intra-particle collision.</li>
+    <li>These particles will check the tier 0 grid for regular intra-particle collision.</li>
+  </ul>
 </ul>
 
 For cleanliness and efficiency of collisions, you should check collisions in the following order.
-<ul>
+<ol>
   <li>All same tiers against same tiers.</li>
+  <ul>
+    <li>Tier 1 against Tier 1</li>
+    <li>Tier 2 against Tier 2</li>
+    <li>Tier 3 against Tier 3</li>
+  </ul>
   <li>Small (Tier 3) against Medium (Tier 2)</li>
   <li>Medium (Tier 2) against Large (Tier 1)</li>
-</ul>
+</ol>
 
 This lets us get smaller objects to an approximately correct position before the larger objects act on them. The larger particles will then have priority, pushing smaller particles out of the way. This may result in smaller objects overlapping each other, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.<br><br>
 If precision matters more than performance you can put all of these in the same update and set it to simulate multiple times. I still suggest running them in this order.
