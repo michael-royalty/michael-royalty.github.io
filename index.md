@@ -1,1 +1,1 @@
-[Niagara Intra-Particle shaped collisions](NiagaraPreciseCollisions.md)
+[Niagara Intra-Particle shaped collisions](NiagaraPreciseCollisions.html)
