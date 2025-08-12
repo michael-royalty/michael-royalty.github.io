@@ -334,35 +334,35 @@ displayCount = 0.0;
 
 const int3 IndexOffsets [ 27 ] = 
 {
-int3(-1,-1,-1),
-int3(-1,-1, 0),
-int3(-1,-1, 1),
-int3(-1, 0,-1),
-int3(-1, 0, 0),
-int3(-1, 0, 1),
-int3(-1, 1,-1),
-int3(-1, 1, 0),
-int3(-1, 1, 1),
+	int3(-1,-1,-1),
+	int3(-1,-1, 0),
+	int3(-1,-1, 1),
+	int3(-1, 0,-1),
+	int3(-1, 0, 0),
+	int3(-1, 0, 1),
+	int3(-1, 1,-1),
+	int3(-1, 1, 0),
+	int3(-1, 1, 1),
 
-int3(0,-1,-1),
-int3(0,-1, 0),
-int3(0,-1, 1),
-int3(0, 0,-1),
-int3(0, 0, 0),
-int3(0, 0, 1),
-int3(0, 1,-1),
-int3(0, 1, 0),
-int3(0, 1, 1),
+	int3(0,-1,-1),
+	int3(0,-1, 0),
+	int3(0,-1, 1),
+	int3(0, 0,-1),
+	int3(0, 0, 0),
+	int3(0, 0, 1),
+	int3(0, 1,-1),
+	int3(0, 1, 0),
+	int3(0, 1, 1),
 
-int3(1,-1,-1),
-int3(1,-1, 0),
-int3(1,-1, 1),
-int3(1, 0,-1),
-int3(1, 0, 0),
-int3(1, 0, 1),
-int3(1, 1,-1),
-int3(1, 1, 0),
-int3(1, 1, 1),
+	int3(1,-1,-1),
+	int3(1,-1, 0),
+	int3(1,-1, 1),
+	int3(1, 0,-1),
+	int3(1, 0, 0),
+	int3(1, 0, 1),
+	int3(1, 1,-1),
+	int3(1, 1, 0),
+	int3(1, 1, 1),
 };
 
 float3 UnitPos;
@@ -373,7 +373,7 @@ myNeighborGrid.UnitToIndex(UnitPos, Index.x,Index.y,Index.z);
 
 float3 FinalOffsetVector = {0,0,0};
 uint ConstraintCount = 0;
-float TotalMassPercentage =1.0;
+float TotalMassPercentage =  1.0;
 
 int3 NumCells;
 myNeighborGrid.GetNumCells(NumCells.x, NumCells.y, NumCells.z);
@@ -383,195 +383,195 @@ myNeighborGrid.MaxNeighborsPerCell(MaxNeighborsPerCell);
 
 for (int xxx = 0; xxx < 27; ++xxx) 
 {
-for (int i = 0; i < MaxNeighborsPerCell; ++i)
-{
-const int3 IndexToUse =Index + IndexOffsets[xxx];
-int NeighborLinearIndex;
-myNeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);
+	for (int i = 0; i < MaxNeighborsPerCell; ++i)
+	{
+		const int3 IndexToUse =Index + IndexOffsets[xxx];
+		int NeighborLinearIndex;
+		myNeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);
 
-int CurrNeighborIdx;
-myNeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);
+		int CurrNeighborIdx;
+		myNeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);
 
-// Use indirection table if persistent ids are used
-if (UsePids) 
-{
-bool myValid;
-DirectReads.GetParticleIndexFromIDTable(CurrNeighborIdx, myValid, CurrNeighborIdx);
-}
+		// Use indirection table if persistent ids are used
+		if (UsePids) 
+		{
+			bool myValid;
+			DirectReads.GetParticleIndexFromIDTable(CurrNeighborIdx, myValid, CurrNeighborIdx);
+		}
 
-// Temp bool used to catch valid/invalid results for direct reads
-bool myBool; 
-float3 OtherPos;
-DirectReads.GetVectorByIndex<Attribute="Position">(CurrNeighborIdx, myBool, OtherPos);
-float3 vectorFromOtherToSelf = Position - OtherPos;
-float dist = length(vectorFromOtherToSelf);
+		// Temp bool used to catch valid/invalid results for direct reads
+		bool myBool; 
+		float3 OtherPos;
+		DirectReads.GetVectorByIndex<Attribute="Position">(CurrNeighborIdx, myBool, OtherPos);
+		float3 vectorFromOtherToSelf = Position - OtherPos;
+		float dist = length(vectorFromOtherToSelf);
 
-// Shape collision updates by Michael Royalty start here
-// MaxCollisionRadius is calculated on the large particles at spawn for a quick sphere-based
-//out if there's no chance of colliding
-float OtherMaxRadius;
-DirectReads.GetFloatByIndex<Attribute="MaxCollisionRadius">(CurrNeighborIdx, myBool, OtherMaxRadius);
+		// Shape collision updates by Michael Royalty start here
+		// MaxCollisionRadius is calculated on the large particles at spawn for a quick sphere-based
+		//  out if there's no chance of colliding
+		float OtherMaxRadius;
+		DirectReads.GetFloatByIndex<Attribute="MaxCollisionRadius">(CurrNeighborIdx, myBool, OtherMaxRadius);
 
-// Particles are too far away to possibly collide, so skip the detailed check
-if (OtherMaxRadius + CollisionRadius < dist) {continue;}
-float OtherRadius;
-float Overlap;
+		// Particles are too far away to possibly collide, so skip the detailed check
+		if (OtherMaxRadius + CollisionRadius < dist) {continue;}
+		float OtherRadius;
+		float Overlap;
 
-int CollisionType;
-DirectReads.GetIntByIndex<Attribute="CollisionType">(CurrNeighborIdx, myBool, CollisionType);
+		int CollisionType;
+		DirectReads.GetIntByIndex<Attribute="CollisionType">(CurrNeighborIdx, myBool, CollisionType);
 
-// Sphere collision code
-if (CollisionType == 0){
-DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
-Overlap = (CollisionRadius + OtherRadius) - dist;
-}
+		// Sphere collision code
+		if (CollisionType == 0){
+			DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
+			Overlap = (CollisionRadius + OtherRadius) - dist;
+		}
 
-// Capsule collision code
-else if (CollisionType == 1)
-{
-// A = Capsule endpoint 1 (start)
-// B = Capsule endpoint 2 (end)
-// Radius = capsule radius
-// P = particle position (Position)
+		// Capsule collision code
+		else if (CollisionType == 1)
+		{
+			// A = Capsule endpoint 1 (start)
+			// B = Capsule endpoint 2 (end)
+			// Radius = capsule radius
+			// P = particle position (Position)
 
-float3 A;
-float3 B;
-DirectReads.GetVectorByIndex<Attribute="CapsuleA">(CurrNeighborIdx, myBool, A);
-DirectReads.GetVectorByIndex<Attribute="CapsuleB">(CurrNeighborIdx, myBool, B);
-DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
+			float3 A;
+			float3 B;
+			DirectReads.GetVectorByIndex<Attribute="CapsuleA">(CurrNeighborIdx, myBool, A);
+			DirectReads.GetVectorByIndex<Attribute="CapsuleB">(CurrNeighborIdx, myBool, B);
+			DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
 
-float3 AB = B - A;
-float3 AP = Position - A;
-float AB_len2 = dot(AB, AB);
+			float3 AB = B - A;
+			float3 AP = Position - A;
+			float AB_len2 = dot(AB, AB);
 
-float t = AB_len2 > 1e-8 ? saturate(dot(AP, AB) / AB_len2) : 0.0;
-float3 ClosestPoint = A + t * AB;
+			float t = AB_len2 > 1e-8 ? saturate(dot(AP, AB) / AB_len2) : 0.0;
+			float3 ClosestPoint = A + t * AB;
 
-vectorFromOtherToSelf = Position - ClosestPoint;
-dist = length(vectorFromOtherToSelf);
+			vectorFromOtherToSelf = Position - ClosestPoint;
+			dist = length(vectorFromOtherToSelf);
 
-Overlap = (CollisionRadius + OtherRadius) - dist;
-}
+			Overlap = (CollisionRadius + OtherRadius) - dist;
+		}
 
-// Box collision code
-else if (CollisionType == 2)
-{
-// MeshOrientation (quat) is directly copied to QuatRotation (vector4),
-//since we can't import quats into hlsl
-float4 qr;
-DirectReads.GetVector4ByIndex<Attribute="QuatRotation">(CurrNeighborIdx, myBool, qr);
+		// Box collision code
+		else if (CollisionType == 2)
+		{
+			// MeshOrientation (quat) is directly copied to QuatRotation (vector4),
+			//  since we can't import quats into hlsl
+			float4 qr;
+			DirectReads.GetVector4ByIndex<Attribute="QuatRotation">(CurrNeighborIdx, myBool, qr);
 
-// Build the rotation matrix needed to convert the large particle to local space
-float3x3 rotMatrix = float3x3
-(
-1 - 2 * (qr.y * qr.y + qr.z * qr.z),
-2 * (qr.x * qr.y - qr.z * qr.w),
-2 * (qr.x * qr.z + qr.y * qr.w),
+			// Build the rotation matrix needed to convert the large particle to local space
+			float3x3 rotMatrix = float3x3
+			(
+			1 - 2 * (qr.y * qr.y + qr.z * qr.z),
+				2 * (qr.x * qr.y - qr.z * qr.w),
+				2 * (qr.x * qr.z + qr.y * qr.w),
 
-2 * (qr.x * qr.y + qr.z * qr.w),
-1 - 2 * (qr.x * qr.x + qr.z * qr.z),
-2 * (qr.y * qr.z - qr.x * qr.w),
+				2 * (qr.x * qr.y + qr.z * qr.w),
+			1 - 2 * (qr.x * qr.x + qr.z * qr.z),
+				2 * (qr.y * qr.z - qr.x * qr.w),
 
-2 * (qr.x * qr.z - qr.y * qr.w),
-2 * (qr.y * qr.z + qr.x * qr.w),
-1 - 2 * (qr.x * qr.x + qr.y * qr.y)
-);
+				2 * (qr.x * qr.z - qr.y * qr.w),
+				2 * (qr.y * qr.z + qr.x * qr.w),
+			1 - 2 * (qr.x * qr.x + qr.y * qr.y)
+			);
 
-// Find the local point, rotate it to the Other's rotation,
-//clamp it to find out if it's inside or outside the box,
-//then unrotate it
-float3 localPoint = mul(transpose(rotMatrix), vectorFromOtherToSelf);
+			// Find the local point, rotate it to the Other's rotation,
+			//  clamp it to find out if it's inside or outside the box,
+			//  then unrotate it
+			float3 localPoint = mul(transpose(rotMatrix), vectorFromOtherToSelf);
 
-float3 OtherBoundsMin, OtherBoundsMax;
-DirectReads.GetVectorByIndex<Attribute="BoundsMin">(CurrNeighborIdx, myBool, OtherBoundsMin);
-DirectReads.GetVectorByIndex<Attribute="BoundsMax">(CurrNeighborIdx, myBool, OtherBoundsMax);
+			float3 OtherBoundsMin, OtherBoundsMax;
+			DirectReads.GetVectorByIndex<Attribute="BoundsMin">(CurrNeighborIdx, myBool, OtherBoundsMin);
+			DirectReads.GetVectorByIndex<Attribute="BoundsMax">(CurrNeighborIdx, myBool, OtherBoundsMax);
 
-// Check to see if the particle is colliding. If not we can skip doing any more checks.
-if (localPoint.x > OtherBoundsMax.x + CollisionRadius
-|| localPoint.x < OtherBoundsMin.x - CollisionRadius
-|| localPoint.y > OtherBoundsMax.y + CollisionRadius
-|| localPoint.y < OtherBoundsMin.y - CollisionRadius
-|| localPoint.z > OtherBoundsMax.z + CollisionRadius
-|| localPoint.z < OtherBoundsMin.z - CollisionRadius) { continue; }
+			// Check to see if the particle is colliding. If not we can skip doing any more checks.
+			if (localPoint.x > OtherBoundsMax.x + CollisionRadius
+				|| localPoint.x < OtherBoundsMin.x - CollisionRadius
+				|| localPoint.y > OtherBoundsMax.y + CollisionRadius
+				|| localPoint.y < OtherBoundsMin.y - CollisionRadius
+				|| localPoint.z > OtherBoundsMax.z + CollisionRadius
+				|| localPoint.z < OtherBoundsMin.z - CollisionRadius) { continue; }
 
-// This works if the point is outside the bounds. For small or fast moving particles this can break.
-// For now, we'll let it break rather than overcomplicating the code.
-float3 localClampedPoint = clamp(localPoint, OtherBoundsMin, OtherBoundsMax);
+			// This works if the point is outside the bounds. For small or fast moving particles this can break.
+			// For now, we'll let it break rather than overcomplicating the code.
+			float3 localClampedPoint = clamp(localPoint, OtherBoundsMin, OtherBoundsMax);
 
-// Calculate dynamic radius of the neighbor box, based on how far from its center the closest point is
-//OtherRadius = length(localClampedPoint); Not needed here
+			// Calculate dynamic radius of the neighbor box, based on how far from its center the closest point is
+			//OtherRadius = length(localClampedPoint); Not needed here
 
-float3 closestPointOnBox = mul(rotMatrix, localClampedPoint) + OtherPos;
+			float3 closestPointOnBox = mul(rotMatrix, localClampedPoint) + OtherPos;
 
-vectorFromOtherToSelf = Position - closestPointOnBox;
-dist = length(vectorFromOtherToSelf);
+			vectorFromOtherToSelf = Position - closestPointOnBox;
+			dist = length(vectorFromOtherToSelf);
 
-// Simplifying this because distToBox already accounts for the other particle's radius
-//float Overlap = (CollisionRadius + OtherRadius) - dist;
-Overlap = CollisionRadius - dist;
+			// Simplifying this because distToBox already accounts for the other particle's radius
+			//float Overlap = (CollisionRadius + OtherRadius) - dist;
+			Overlap = CollisionRadius - dist;
 
-} // End of box collision checks
+		} // End of box collision checks
 
 
-float3 CollisionNormal = vectorFromOtherToSelf / dist;
+		float3 CollisionNormal = vectorFromOtherToSelf / dist;
 
-// Shape collision updates by Michael Royalty end here
-//..But note the commented out CurrNeighborIdx and related comment below.
+		// Shape collision updates by Michael Royalty end here
+		//  ..But note the commented out CurrNeighborIdx and related comment below.
 
-// Removing the CurrNeightborIdx != InstanceIdx check for now. These systems are separate emitters,
-//so the indexes can and should be equal at times.
-// If we merge them to a single emitter we should add this check back in.
-if (IndexToUse.x >= 0 && IndexToUse.x < NumCells.x && 
-IndexToUse.y >= 0 && IndexToUse.y < NumCells.y && 
-IndexToUse.z >= 0 && IndexToUse.z < NumCells.z && 
-/*CurrNeighborIdx != InstanceIdx && */CurrNeighborIdx != -1 && dist > 1e-5)
-{
-bool otherUnyeilding = false;
-TotalMassPercentage =1.0;
+		// Removing the CurrNeightborIdx != InstanceIdx check for now. These systems are separate emitters,
+		//  so the indexes can and should be equal at times.
+		// If we merge them to a single emitter we should add this check back in.
+		if (IndexToUse.x >= 0 && IndexToUse.x < NumCells.x && 
+			IndexToUse.y >= 0 && IndexToUse.y < NumCells.y && 
+			IndexToUse.z >= 0 && IndexToUse.z < NumCells.z && 
+			/*CurrNeighborIdx != InstanceIdx && */CurrNeighborIdx != -1 && dist > 1e-5)
+		{
+			bool otherUnyeilding = false;
+			TotalMassPercentage =  1.0;
 
-if ( Overlap > 1e-5)
-{
-NumberOfNeighbors+=1;
-displayCount = NumberOfNeighbors;
-bool NeighborUnyieldResults;
-DirectReads.GetBoolByIndex<Attribute="Unyielding">(CurrNeighborIdx, myBool, NeighborUnyieldResults);
+			if ( Overlap > 1e-5)
+			{
+				NumberOfNeighbors+=1;
+				displayCount = NumberOfNeighbors;
+				bool NeighborUnyieldResults;
+				DirectReads.GetBoolByIndex<Attribute="Unyielding">(CurrNeighborIdx, myBool, NeighborUnyieldResults);
 
-CollidesOut = true;
+				CollidesOut = true;
 
-float OtherMass;
-DirectReads.GetFloatByIndex<Attribute="Mass">(CurrNeighborIdx, myBool, OtherMass);
+				float OtherMass;
+				DirectReads.GetFloatByIndex<Attribute="Mass">(CurrNeighborIdx, myBool, OtherMass);
 
-// 1 moves this particle, 0 moves the other, .5 moves both
+				// 1 moves this particle, 0 moves the other, .5 moves both
 
-TotalMassPercentage = Mass / (Mass + OtherMass); 
+				TotalMassPercentage = Mass / (Mass + OtherMass); 
 
-if ( NeighborUnyieldResults && Unyielding ){ // Both this particle and the other are unyielding
-TotalMassPercentage = TotalMassPercentage; 
-} 
-else if ( NeighborUnyieldResults ) { // This particle yields but the other does not
-TotalMassPercentage = lerp ( TotalMassPercentage, 0.0, UnyeildingMassPercentage); //0
-} 
-else if (Unyielding) { // This particle is unyielding but the other is
-TotalMassPercentage = lerp ( TotalMassPercentage,1.0, UnyeildingMassPercentage); //1
-}
+				if ( NeighborUnyieldResults && Unyielding ){ // Both this particle and the other are unyielding
+					TotalMassPercentage = TotalMassPercentage; 
+				} 
+				else if ( NeighborUnyieldResults ) { // This particle yields but the other does not
+					TotalMassPercentage = lerp ( TotalMassPercentage, 0.0, UnyeildingMassPercentage); //0
+				} 
+				else if (Unyielding) { // This particle is unyielding but the other is
+					TotalMassPercentage = lerp ( TotalMassPercentage,1.0, UnyeildingMassPercentage); //1
+				}
 
-// If both are yielding then use the normal ratio
-FinalOffsetVector += (1.0 - TotalMassPercentage) * Overlap * CollisionNormal; 
-ConstraintCount += 1;
-}
-}
-}
+				// If both are yielding then use the normal ratio
+				FinalOffsetVector += (1.0 - TotalMassPercentage) * Overlap * CollisionNormal; 
+				ConstraintCount += 1;
+			}
+		}      
+	}
 }
 
 if (ConstraintCount > 0 && IsMobile)
 {
-OutPosition += 1.0*FinalOffsetVector/ (ConstraintCount * RelaxationAmount);
+	OutPosition += 1.0*FinalOffsetVector/ (ConstraintCount * RelaxationAmount);
 
 
-// Add friction support here
+	// Add friction support here
 
 
-OutVelocity = (OutPosition - PreviousPosition) * InvDt;
+	OutVelocity = (OutPosition - PreviousPosition) * InvDt;
 }
 
 #endif
