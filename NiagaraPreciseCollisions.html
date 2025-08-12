@@ -1,182 +1,326 @@
-<html>
-  <head>
-    <title>Niagara precise shaped collisions by Michael Royalty</title>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="Instructional guide for enabling precise shaped collisions in Niagara using HLSL, grids, and tiered collision ordering." />
+  <title>Niagara precise shaped collisions by Michael Royalty</title>
 
-    <style>
-  body {
-    font-family: sans-serif;
-    line-height: 1.6;
-    padding: 2rem;
-    max-width: 1000px;
-    margin: auto;
-    background: #f8f9fa;
-    color: #212529;
-  }
+  <style>
+    :root{
+      --bg: #f7f9fb;
+      --bg-elev: #ffffff;
+      --bg-code: #1f2430;
+      --fg: #212529;
+      --muted: #6c757d;
+      --border: #dee2e6;
+      --accent: #2c7be5;
+      --accent-ink: #173d7a;
+      --radius: 10px;
+      --space-1: .5rem;
+      --space-2: 1rem;
+      --space-3: 1.5rem;
+      --space-4: 2rem;
+      --maxw: 1100px;
+      --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.06);
+      --code-fg: #e6e9ef;
+      --code-muted: #aab2bf;
+    }
 
-  h1 {
-    border-bottom: 2px solid #ccc;
-    padding-bottom: 0.3em;
-    margin-top: 2em;
-  }
+    html{scroll-behavior:smooth}
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      color: var(--fg);
+      background: linear-gradient(180deg, var(--bg), #f5f6f8 60%);
+    }
 
-  h2 {
-    margin-top: 1.5em;
-    color: #2c3e50;
-  }
+    .skip-link{
+      position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;
+    }
+    .skip-link:focus{position:static; width:auto; height:auto; padding: var(--space-1); background:#fff; border:1px solid var(--border); border-radius:6px;}
 
-  ul, ol {
-    margin-left: 2em;
-  }
+    header{
+      background: linear-gradient(180deg, #fff, #f9fbff);
+      border-bottom: 1px solid var(--border);
+    }
+    .wrap{
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 0 var(--space-2);
+    }
+    .hero{
+      padding: var(--space-4) var(--space-2) var(--space-3);
+    }
+    h1{
+      margin: 0 0 .25em 0;
+      font-size: clamp(1.8rem, 2vw + 1.2rem, 2.4rem);
+      letter-spacing: .2px;
+    }
+    .subtitle{
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
 
-  details {
-    background: #eee;
-    padding: 0.5em;
-    border-radius: 6px;
-    margin-top: 1em;
-  }
+    main{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-2) var(--space-4);
+    }
+    @media (min-width: 1024px){
+      main{
+        grid-template-columns: 280px 1fr;
+        gap: var(--space-4);
+      }
+    }
 
-  summary {
-    cursor: pointer;
-    font-weight: bold;
-  }
+    nav[role="doc-toc"]{
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-2);
+      box-shadow: var(--shadow);
+    }
+    nav h2{
+      margin-top: 0;
+      font-size: 1.05rem;
+      color: var(--accent-ink);
+    }
+    nav ul{
+      list-style: none;
+      padding: 0;
+      margin: .25rem 0 0 0;
+    }
+    nav li{margin: .25rem 0;}
+    nav a{
+      text-decoration: none;
+      color: var(--fg);
+      border-radius: 6px;
+      padding: .15rem .25rem;
+      display: inline-block;
+    }
+    nav a:hover, nav a:focus{background:#f1f4f9; color: var(--accent-ink);}
 
-  code, pre {
-    background: #272822;
-    color: #f8f8f2;
-    padding: 0.5em;
-    border-radius: 5px;
-    font-family: monospace;
-    display: block;
-    overflow-x: auto;
-    white-space: pre;
-    font-size: 0.9em;
-  }
+    .content{
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: var(--space-3);
+    }
 
-section {
-  margin-top: calc(var(--spacing) / 2);
-  padding-top: calc(var(--spacing) / 2);
-  border-top: 1px solid #ddd;
-}
-	    
-</style>
-  </head>
+    section{
+      margin-top: var(--space-3);
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--border);
+    }
 
-  <body>
-<h1>Niagara precise shaped collisions</h1>
+    h2{
+      color: #2c3e50;
+      margin: 0 0 .5rem;
+      font-size: clamp(1.25rem, 1.2vw + .9rem, 1.5rem);
+    }
+    h3{margin-top: 1.25rem; margin-bottom: .25rem;}
 
-<nav>
-  <h2>Contents</h2>
-  <ul>
-    <li><a href="#supported">What's supported</a></li>
-    <li><a href="#unsupported">What's not supported</a></li>
-    <li><a href="#overview">Overview</a></li>
-    <li><a href="#grids">Example of setting up multiple grids</a></li>
-    <li><a href="#collision-order">Collision processing order</a></li>
-    <li><a href="#variables">Variables</a></li>
-    <li><a href="#editing">Editing the intra-particle reader</a></li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#future">Future Improvements</a></li>
-  </ul>
-</nav>
-<main>
-<h2>Updating the pre-existing HLSL for Intra-Particle Collisions to add support for cubes and cylinders.</h2>
+    p{margin: .75rem 0;}
 
-You can enable precise collisions in Niagara using HLSL and modifying the base PDB intra-particle collisions scratchpad to support it.
+    ul, ol{
+      padding-left: 1.25rem;
+      margin: .5rem 0 1rem;
+    }
+    li{margin: .35rem 0;}
+    li > ul, li > ol{margin-top: .35rem;}
 
-	<section id="supported">
-<h2 id="supported">What's supported:</h2>
-<ul>
-  <li>Spherical particles checking against shaped particles for collision</li>
-</ul>
-	</section>
+    details{
+      background: #f4f6f8;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .75rem;
+      margin-top: .75rem;
+    }
+    summary{
+      cursor: pointer;
+      font-weight: 600;
+      color: #1f2a44;
+    }
 
-	<section id="unsupported">
-<h2 id="unsupported">What's not supported:</h2>
-<ul>
-  <li>Shaped particles checking against shaped particles for collision</li>
-  <li>Shaped particles checking against spherical particles for collision</li>
-</ul>
-	</section>
-	
-<section id="overview">
-<h2 id="overview">Overview</h2>
+    code, pre{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: .95rem;
+    }
+    pre{
+      background: var(--bg-code);
+      color: var(--code-fg);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(0,0,0,.2);
+    }
+    pre code{display:block; white-space: pre;}
+    .token-comment{color: var(--code-muted); font-style: italic;}
 
-Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shaped  particles treat shaped particles as unyielding.<br><br>
+    .note{
+      background: #fffdf5;
+      border-left: 4px solid #f0b429;
+      padding: .75rem .9rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
 
-All shaped particles should treat each other as spherical and use the regular intra-pdb collisions.<br>
+    a{color: var(--accent);}
 
-You can make tiers of shaped particles.<br>
+    footer{
+      border-top: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      padding: var(--space-3) var(--space-2);
+    }
+    .foot-wrap{
+      max-width: var(--maxw);
+      margin: 0 auto;
+    }
+  </style>
+</head>
 
-Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.<br>
-</section>
-	<section id="grids">
-<h2 id="grids">Example of setting up multiple grids:</h2>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
 
-<ul>
-  <li>Tier 2 (Largest): Use a grid with large extents -- extents equal to double the largest particle's length from center to outermost point.</li>
-  <li><ul>
-    <li>These particles will check the Tier 2 grid for regular intra-particle collision.</li>
-  </ul></li>
-  <li>Tier 1 (Medium): Use a grid with medium extents</li>
-  <li><ul>
-    <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
-    <li>These particles will check the tier 1 grid for regular intra-particle collision.</li>
-  </ul></li>
-  <li>Tier 0 (Small)</li>
-  <li><ul>
-    <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
-    <li>These particles will check the tier 1 grid for shaped intra-particle collision.</li>
-    <li>These particles will check the tier 0 grid for regular intra-particle collision.</li>
-  </ul></li>
-</ul>
-	</section>
+  <header>
+    <div class="wrap hero">
+      <h1>Niagara precise shaped collisions</h1>
+      <p class="subtitle">Updating the pre-existing HLSL for Intra-Particle Collisions to add support for cubes and cylinders.</p>
+    </div>
+  </header>
 
-	<section id="collision-order">
-<h2 id="collision-order">Collision order:</h2>
-For cleanliness and efficiency of collisions, you should check collisions in the following order.
-<ol>
-  <li>All same tiers against same tiers.</li>
-  <li><ul>
-    <li>Tier 1 against Tier 1</li>
-    <li>Tier 2 against Tier 2</li>
-    <li>Tier 3 against Tier 3</li>
-  </ul></li>
-  <li>Small (Tier 3) against Medium (Tier 2)</li>
-  <li>Medium (Tier 2) against Large (Tier 1)</li>
-</ol>
+  <main id="main" class="wrap">
+    <nav role="doc-toc" aria-label="Table of contents">
+      <h2>Contents</h2>
+      <ul>
+        <li><a href="#supported">What's supported</a></li>
+        <li><a href="#unsupported">What's not supported</a></li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#grids">Example of setting up multiple grids</a></li>
+        <li><a href="#collision-order">Collision processing order</a></li>
+        <li><a href="#variables">Variables</a></li>
+        <li><a href="#editing">Editing the intra-particle reader</a></li>
+        <li><a href="#usage">Usage</a></li>
+        <li><a href="#future">Future Improvements</a></li>
+      </ul>
+    </nav>
 
-This lets us get smaller objects to an approximately correct position before the larger objects act on them. The larger particles will then have priority, pushing smaller particles out of the way. This may result in smaller objects overlapping each other, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.<br><br>
-If precision matters more than performance you can put all of these in the same update and set it to simulate multiple times. I still suggest running them in this order.
-	</section>
+    <article class="content">
+      <section id="supported" aria-labelledby="supported-heading">
+        <h2 id="supported-heading">What's supported:</h2>
+        <ul>
+          <li>Spherical particles checking against shaped particles for collision</li>
+        </ul>
+        <!-- Picture suggestion: A simple diagram showing a sphere colliding against a box and capsule, with the sphere displaced. -->
+      </section>
 
-	<section id="variables">
-<h2 id="variables">What variables do we need?</h2>
-<ol>
-  <li>CollisionType (int) -- Box (2), Cylinder (1), or Sphere (0). Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
-  <li>MaxCollisionRadius (float) -- This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
-  <li><ul>
-    <li>It should be equal to the length to the longest outlying point -- From the center of extents to a corner</li>
-    <li>While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius.</li>
-    <li>As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.</li>
-  </ul></li>
-  <li>Extents (Vector) -- Scale * Mesh Extents. Needed for boxes.</li>
-  <li>Half Height (float) -- Half height of a cylinder</li>
-  <li>CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input. Also used for Cylinder radius.</li>
-  <li>Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.</li>
-</ol>
-	</section>
+      <section id="unsupported" aria-labelledby="unsupported-heading">
+        <h2 id="unsupported-heading">What's not supported:</h2>
+        <ul>
+          <li>Shaped particles checking against shaped particles for collision</li>
+          <li>Shaped particles checking against spherical particles for collision</li>
+        </ul>
+        <!-- Picture suggestion: Matrix chart with ticks/crosses for supported vs unsupported pairings (Sphere->Sphere, Sphere->Box, Box->Sphere, Box->Box, etc.). -->
+      </section>
 
-	<section id="editing">
-<h2 id="editing">Editing the intra-particle reader</h2>
-  
-Editing the intra-particle reader is simple.
-<ol>
-  <li>Copy the base reader scratchpad into another directory and rename it.</li>
-  <li>Edit the scratch and add these input pins.</li>
-  <li>Edit the HLSL and add this code block<br>
-    <details>
-      <summary>HLSL Code</summary>
-      <pre><code class="language-hlsl">
+      <section id="overview" aria-labelledby="overview-heading">
+        <h2 id="overview-heading">Overview</h2>
+        <p>Basically, you make a list of shaped particles that can move other less important particles out of their way. For this support, the shaped particles make use of the existing "unyielding" particle logic -- all non-shapedparticles treat shaped particles as unyielding.</p>
+        <p>All shaped particles should treat each other as spherical and use the regular intra-pdb collisions.</p>
+        <p>You can make tiers of shaped particles.</p>
+        <p>Neighbor Grids should be sized based on particle size. If a grid is too large, you include too many particles and checks get inefficient. If it's too small, a large particle could span across multiple grids and not be detected at its edges for collision.</p>
+        <!-- Picture suggestion: Concept diagram of three tiers of particles with arrows indicating influence (large pushing medium, medium pushing small), plus grid cells sized per tier. -->
+      </section>
+
+      <section id="grids" aria-labelledby="grids-heading">
+        <h2 id="grids-heading">Example of setting up multiple grids:</h2>
+        <ul>
+          <li>Tier 2 (Largest): Use a grid with large extents -- extents equal to double the largest particle's length from center to outermost point.</li>
+          <li>
+            <ul>
+              <li>These particles will check the Tier 2 grid for regular intra-particle collision.</li>
+            </ul>
+          </li>
+          <li>Tier 1 (Medium): Use a grid with medium extents</li>
+          <li>
+            <ul>
+              <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
+              <li>These particles will check the tier 1 grid for regular intra-particle collision.</li>
+            </ul>
+          </li>
+          <li>Tier 0 (Small)</li>
+          <li>
+            <ul>
+              <li>These particles will check the tier 2 grid for shaped intra-particle collision.</li>
+              <li>These particles will check the tier 1 grid for shaped intra-particle collision.</li>
+              <li>These particles will check the tier 0 grid for regular intra-particle collision.</li>
+            </ul>
+          </li>
+        </ul>
+        <!-- Picture suggestion: Side-by-side visual: left shows three grids with different cell sizes; right shows representative particle sizes assigned to each grid. -->
+      </section>
+
+      <section id="collision-order" aria-labelledby="collision-order-heading">
+        <h2 id="collision-order-heading">Collision order:</h2>
+        <p>For cleanliness and efficiency of collisions, you should check collisions in the following order.</p>
+        <ol>
+          <li>All same tiers against same tiers.</li>
+          <li>
+            <ul>
+              <li>Tier 1 against Tier 1</li>
+              <li>Tier 2 against Tier 2</li>
+              <li>Tier 3 against Tier 3</li>
+            </ul>
+          </li>
+          <li>Small (Tier 3) against Medium (Tier 2)</li>
+          <li>Medium (Tier 2) against Large (Tier 1)</li>
+        </ol>
+        <p>This lets us get smaller objects to an approximately correct position before the larger objects act on them. The larger particles will then have priority, pushing smaller particles out of the way. This may result in smaller objects overlapping each other, but small objects overlapping is less visible than small objects failing to be pushed by larger objects.</p>
+        <p>If precision matters more than performance you can put all of these in the same update and set it to simulate multiple times. I still suggest running them in this order.</p>
+        <!-- Picture suggestion: Timeline or flow diagram showing update passes in the recommended order, with notes on why (stability vs performance). -->
+      </section>
+
+      <section id="variables" aria-labelledby="variables-heading">
+        <h2 id="variables-heading">What variables do we need?</h2>
+        <ol>
+          <li>CollisionType (int) -- Box (2), Cylinder (1), or Sphere (0). Sphere collisions could use the regular intra-particle collisions, but for grid size and batching purposes we may as well combine them.</li>
+          <li>MaxCollisionRadius (float) -- This is a separate stat from Collision Radius, used for an early out when small objects check larger objects for collision.
+            <ul>
+              <li>It should be equal to the length to the longest outlying point -- From the center of extents to a corner</li>
+              <li>While we could just us CollisionRadius, we will also be using CollisionRadius for intra-particle collisions. It's useful to keep MaxCollisionRadius (early out) separate from CollisionRadius.</li>
+              <li>As you may want the collision radius between like-sized particles to be smaller, and we want to use this early-out to eke out all the efficiency we can.</li>
+            </ul>
+          </li>
+          <li>Extents (Vector) -- Scale &ast; Mesh Extents. Needed for boxes.</li>
+          <li>Half Height (float) -- Half height of a cylinder</li>
+          <li>CollisionRadius (Float) -- Needed for spheres. Can be calculated by Niagara or manually input. Also used for Cylinder radius.</li>
+          <li>Orientation (Quat) -- Needed for boxes and cylinders. Calculated by Niagara.</li>
+        </ol>
+        <!-- Picture suggestion: Variable callouts overlaid on a labeled box and capsule, showing max radius, extents, half-height, and orientation axes. -->
+      </section>
+
+      <section id="editing" aria-labelledby="editing-heading">
+        <h2 id="editing-heading">Editing the intra-particle reader</h2>
+        <p>Editing the intra-particle reader is simple.</p>
+        <ol>
+          <li>Copy the base reader scratchpad into another directory and rename it.</li>
+          <li>Edit the scratch and add these input pins.</li>
+          <li>Edit the HLSL and add this code block</li>
+        </ol>
+
+        <details>
+          <summary>HLSL Code</summary>
+          <pre><code class="language-hlsl">
 // Code by Epic when not otherwise denoted
 OutPosition = Position;
 OutVelocity = Velocity;
@@ -190,35 +334,35 @@ displayCount = 0.0;
 
 const int3 IndexOffsets [ 27 ] = 
 {
-	int3(-1,-1,-1),
-	int3(-1,-1, 0),
-	int3(-1,-1, 1),
-	int3(-1, 0,-1),
-	int3(-1, 0, 0),
-	int3(-1, 0, 1),
-	int3(-1, 1,-1),
-	int3(-1, 1, 0),
-	int3(-1, 1, 1),
+int3(-1,-1,-1),
+int3(-1,-1, 0),
+int3(-1,-1, 1),
+int3(-1, 0,-1),
+int3(-1, 0, 0),
+int3(-1, 0, 1),
+int3(-1, 1,-1),
+int3(-1, 1, 0),
+int3(-1, 1, 1),
 
-	int3(0,-1,-1),
-	int3(0,-1, 0),
-	int3(0,-1, 1),
-	int3(0, 0,-1),
-	int3(0, 0, 0),
-	int3(0, 0, 1),
-	int3(0, 1,-1),
-	int3(0, 1, 0),
-	int3(0, 1, 1),
+int3(0,-1,-1),
+int3(0,-1, 0),
+int3(0,-1, 1),
+int3(0, 0,-1),
+int3(0, 0, 0),
+int3(0, 0, 1),
+int3(0, 1,-1),
+int3(0, 1, 0),
+int3(0, 1, 1),
 
-	int3(1,-1,-1),
-	int3(1,-1, 0),
-	int3(1,-1, 1),
-	int3(1, 0,-1),
-	int3(1, 0, 0),
-	int3(1, 0, 1),
-	int3(1, 1,-1),
-	int3(1, 1, 0),
-	int3(1, 1, 1),
+int3(1,-1,-1),
+int3(1,-1, 0),
+int3(1,-1, 1),
+int3(1, 0,-1),
+int3(1, 0, 0),
+int3(1, 0, 1),
+int3(1, 1,-1),
+int3(1, 1, 0),
+int3(1, 1, 1),
 };
 
 float3 UnitPos;
@@ -229,7 +373,7 @@ myNeighborGrid.UnitToIndex(UnitPos, Index.x,Index.y,Index.z);
 
 float3 FinalOffsetVector = {0,0,0};
 uint ConstraintCount = 0;
-float TotalMassPercentage =  1.0;
+float TotalMassPercentage =1.0;
 
 int3 NumCells;
 myNeighborGrid.GetNumCells(NumCells.x, NumCells.y, NumCells.z);
@@ -239,227 +383,234 @@ myNeighborGrid.MaxNeighborsPerCell(MaxNeighborsPerCell);
 
 for (int xxx = 0; xxx < 27; ++xxx) 
 {
-	for (int i = 0; i < MaxNeighborsPerCell; ++i)
-	{
-		const int3 IndexToUse =Index + IndexOffsets[xxx];
-		int NeighborLinearIndex;
-		myNeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);
+for (int i = 0; i < MaxNeighborsPerCell; ++i)
+{
+const int3 IndexToUse =Index + IndexOffsets[xxx];
+int NeighborLinearIndex;
+myNeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);
 
-		int CurrNeighborIdx;
-		myNeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);
+int CurrNeighborIdx;
+myNeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);
 
-		// Use indirection table if persistent ids are used
-		if (UsePids) 
-		{
-			bool myValid;
-			DirectReads.GetParticleIndexFromIDTable(CurrNeighborIdx, myValid, CurrNeighborIdx);
-		}
+// Use indirection table if persistent ids are used
+if (UsePids) 
+{
+bool myValid;
+DirectReads.GetParticleIndexFromIDTable(CurrNeighborIdx, myValid, CurrNeighborIdx);
+}
 
-		// Temp bool used to catch valid/invalid results for direct reads
-		bool myBool; 
-		float3 OtherPos;
-		DirectReads.GetVectorByIndex<Attribute="Position">(CurrNeighborIdx, myBool, OtherPos);
-		float3 vectorFromOtherToSelf = Position - OtherPos;
-		float dist = length(vectorFromOtherToSelf);
+// Temp bool used to catch valid/invalid results for direct reads
+bool myBool; 
+float3 OtherPos;
+DirectReads.GetVectorByIndex<Attribute="Position">(CurrNeighborIdx, myBool, OtherPos);
+float3 vectorFromOtherToSelf = Position - OtherPos;
+float dist = length(vectorFromOtherToSelf);
 
-		// Shape collision updates by Michael Royalty start here
-		// MaxCollisionRadius is calculated on the large particles at spawn for a quick sphere-based
-		//  out if there's no chance of colliding
-		float OtherMaxRadius;
-		DirectReads.GetFloatByIndex<Attribute="MaxCollisionRadius">(CurrNeighborIdx, myBool, OtherMaxRadius);
+// Shape collision updates by Michael Royalty start here
+// MaxCollisionRadius is calculated on the large particles at spawn for a quick sphere-based
+//out if there's no chance of colliding
+float OtherMaxRadius;
+DirectReads.GetFloatByIndex<Attribute="MaxCollisionRadius">(CurrNeighborIdx, myBool, OtherMaxRadius);
 
-		// Particles are too far away to possibly collide, so skip the detailed check
-		if (OtherMaxRadius + CollisionRadius < dist) {continue;}
-		float OtherRadius;
-		float Overlap;
+// Particles are too far away to possibly collide, so skip the detailed check
+if (OtherMaxRadius + CollisionRadius < dist) {continue;}
+float OtherRadius;
+float Overlap;
 
-		int CollisionType;
-		DirectReads.GetIntByIndex<Attribute="CollisionType">(CurrNeighborIdx, myBool, CollisionType);
+int CollisionType;
+DirectReads.GetIntByIndex<Attribute="CollisionType">(CurrNeighborIdx, myBool, CollisionType);
 
-		// Sphere collision code
-		if (CollisionType == 0){
-			DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
-			Overlap = (CollisionRadius + OtherRadius) - dist;
-		}
+// Sphere collision code
+if (CollisionType == 0){
+DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
+Overlap = (CollisionRadius + OtherRadius) - dist;
+}
 
-		// Capsule collision code
-		else if (CollisionType == 1)
-		{
-			// A = Capsule endpoint 1 (start)
-			// B = Capsule endpoint 2 (end)
-			// Radius = capsule radius
-			// P = particle position (Position)
+// Capsule collision code
+else if (CollisionType == 1)
+{
+// A = Capsule endpoint 1 (start)
+// B = Capsule endpoint 2 (end)
+// Radius = capsule radius
+// P = particle position (Position)
 
-			float3 A;
-			float3 B;
-			DirectReads.GetVectorByIndex<Attribute="CapsuleA">(CurrNeighborIdx, myBool, A);
-			DirectReads.GetVectorByIndex<Attribute="CapsuleB">(CurrNeighborIdx, myBool, B);
-			DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
+float3 A;
+float3 B;
+DirectReads.GetVectorByIndex<Attribute="CapsuleA">(CurrNeighborIdx, myBool, A);
+DirectReads.GetVectorByIndex<Attribute="CapsuleB">(CurrNeighborIdx, myBool, B);
+DirectReads.GetFloatByIndex<Attribute="CollisionRadius">(CurrNeighborIdx, myBool, OtherRadius);
 
-			float3 AB = B - A;
-			float3 AP = Position - A;
-			float AB_len2 = dot(AB, AB);
+float3 AB = B - A;
+float3 AP = Position - A;
+float AB_len2 = dot(AB, AB);
 
-			float t = AB_len2 > 1e-8 ? saturate(dot(AP, AB) / AB_len2) : 0.0;
-			float3 ClosestPoint = A + t * AB;
+float t = AB_len2 > 1e-8 ? saturate(dot(AP, AB) / AB_len2) : 0.0;
+float3 ClosestPoint = A + t * AB;
 
-			vectorFromOtherToSelf = Position - ClosestPoint;
-			dist = length(vectorFromOtherToSelf);
+vectorFromOtherToSelf = Position - ClosestPoint;
+dist = length(vectorFromOtherToSelf);
 
-			Overlap = (CollisionRadius + OtherRadius) - dist;
-		}
+Overlap = (CollisionRadius + OtherRadius) - dist;
+}
 
-		// Box collision code
-		else if (CollisionType == 2)
-		{
-			// MeshOrientation (quat) is directly copied to QuatRotation (vector4),
-			//  since we can't import quats into hlsl
-			float4 qr;
-			DirectReads.GetVector4ByIndex<Attribute="QuatRotation">(CurrNeighborIdx, myBool, qr);
+// Box collision code
+else if (CollisionType == 2)
+{
+// MeshOrientation (quat) is directly copied to QuatRotation (vector4),
+//since we can't import quats into hlsl
+float4 qr;
+DirectReads.GetVector4ByIndex<Attribute="QuatRotation">(CurrNeighborIdx, myBool, qr);
 
-			// Build the rotation matrix needed to convert the large particle to local space
-			float3x3 rotMatrix = float3x3
-			(
-			1 - 2 * (qr.y * qr.y + qr.z * qr.z),
-				2 * (qr.x * qr.y - qr.z * qr.w),
-				2 * (qr.x * qr.z + qr.y * qr.w),
+// Build the rotation matrix needed to convert the large particle to local space
+float3x3 rotMatrix = float3x3
+(
+1 - 2 * (qr.y * qr.y + qr.z * qr.z),
+2 * (qr.x * qr.y - qr.z * qr.w),
+2 * (qr.x * qr.z + qr.y * qr.w),
 
-				2 * (qr.x * qr.y + qr.z * qr.w),
-			1 - 2 * (qr.x * qr.x + qr.z * qr.z),
-				2 * (qr.y * qr.z - qr.x * qr.w),
+2 * (qr.x * qr.y + qr.z * qr.w),
+1 - 2 * (qr.x * qr.x + qr.z * qr.z),
+2 * (qr.y * qr.z - qr.x * qr.w),
 
-				2 * (qr.x * qr.z - qr.y * qr.w),
-				2 * (qr.y * qr.z + qr.x * qr.w),
-			1 - 2 * (qr.x * qr.x + qr.y * qr.y)
-			);
+2 * (qr.x * qr.z - qr.y * qr.w),
+2 * (qr.y * qr.z + qr.x * qr.w),
+1 - 2 * (qr.x * qr.x + qr.y * qr.y)
+);
 
-			// Find the local point, rotate it to the Other's rotation,
-			//  clamp it to find out if it's inside or outside the box,
-			//  then unrotate it
-			float3 localPoint = mul(transpose(rotMatrix), vectorFromOtherToSelf);
+// Find the local point, rotate it to the Other's rotation,
+//clamp it to find out if it's inside or outside the box,
+//then unrotate it
+float3 localPoint = mul(transpose(rotMatrix), vectorFromOtherToSelf);
 
-			float3 OtherBoundsMin, OtherBoundsMax;
-			DirectReads.GetVectorByIndex<Attribute="BoundsMin">(CurrNeighborIdx, myBool, OtherBoundsMin);
-			DirectReads.GetVectorByIndex<Attribute="BoundsMax">(CurrNeighborIdx, myBool, OtherBoundsMax);
+float3 OtherBoundsMin, OtherBoundsMax;
+DirectReads.GetVectorByIndex<Attribute="BoundsMin">(CurrNeighborIdx, myBool, OtherBoundsMin);
+DirectReads.GetVectorByIndex<Attribute="BoundsMax">(CurrNeighborIdx, myBool, OtherBoundsMax);
 
-			// Check to see if the particle is colliding. If not we can skip doing any more checks.
-			if (localPoint.x > OtherBoundsMax.x + CollisionRadius
-				|| localPoint.x < OtherBoundsMin.x - CollisionRadius
-				|| localPoint.y > OtherBoundsMax.y + CollisionRadius
-				|| localPoint.y < OtherBoundsMin.y - CollisionRadius
-				|| localPoint.z > OtherBoundsMax.z + CollisionRadius
-				|| localPoint.z < OtherBoundsMin.z - CollisionRadius) { continue; }
+// Check to see if the particle is colliding. If not we can skip doing any more checks.
+if (localPoint.x > OtherBoundsMax.x + CollisionRadius
+|| localPoint.x < OtherBoundsMin.x - CollisionRadius
+|| localPoint.y > OtherBoundsMax.y + CollisionRadius
+|| localPoint.y < OtherBoundsMin.y - CollisionRadius
+|| localPoint.z > OtherBoundsMax.z + CollisionRadius
+|| localPoint.z < OtherBoundsMin.z - CollisionRadius) { continue; }
 
-			// This works if the point is outside the bounds. For small or fast moving particles this can break.
-			// For now, we'll let it break rather than overcomplicating the code.
-			float3 localClampedPoint = clamp(localPoint, OtherBoundsMin, OtherBoundsMax);
+// This works if the point is outside the bounds. For small or fast moving particles this can break.
+// For now, we'll let it break rather than overcomplicating the code.
+float3 localClampedPoint = clamp(localPoint, OtherBoundsMin, OtherBoundsMax);
 
-			// Calculate dynamic radius of the neighbor box, based on how far from its center the closest point is
-			//OtherRadius = length(localClampedPoint); Not needed here
+// Calculate dynamic radius of the neighbor box, based on how far from its center the closest point is
+//OtherRadius = length(localClampedPoint); Not needed here
 
-			float3 closestPointOnBox = mul(rotMatrix, localClampedPoint) + OtherPos;
+float3 closestPointOnBox = mul(rotMatrix, localClampedPoint) + OtherPos;
 
-			vectorFromOtherToSelf = Position - closestPointOnBox;
-			dist = length(vectorFromOtherToSelf);
+vectorFromOtherToSelf = Position - closestPointOnBox;
+dist = length(vectorFromOtherToSelf);
 
-			// Simplifying this because distToBox already accounts for the other particle's radius
-			//float Overlap = (CollisionRadius + OtherRadius) - dist;
-			Overlap = CollisionRadius - dist;
+// Simplifying this because distToBox already accounts for the other particle's radius
+//float Overlap = (CollisionRadius + OtherRadius) - dist;
+Overlap = CollisionRadius - dist;
 
-		} // End of box collision checks
+} // End of box collision checks
 
 
-		float3 CollisionNormal = vectorFromOtherToSelf / dist;
+float3 CollisionNormal = vectorFromOtherToSelf / dist;
 
-		// Shape collision updates by Michael Royalty end here
-		//  ..But note the commented out CurrNeighborIdx and related comment below.
+// Shape collision updates by Michael Royalty end here
+//..But note the commented out CurrNeighborIdx and related comment below.
 
-		// Removing the CurrNeightborIdx != InstanceIdx check for now. These systems are separate emitters,
-		//  so the indexes can and should be equal at times.
-		// If we merge them to a single emitter we should add this check back in.
-		if (IndexToUse.x >= 0 && IndexToUse.x < NumCells.x && 
-			IndexToUse.y >= 0 && IndexToUse.y < NumCells.y && 
-			IndexToUse.z >= 0 && IndexToUse.z < NumCells.z && 
-			/*CurrNeighborIdx != InstanceIdx && */CurrNeighborIdx != -1 && dist > 1e-5)
-		{
-			bool otherUnyeilding = false;
-			TotalMassPercentage =  1.0;
+// Removing the CurrNeightborIdx != InstanceIdx check for now. These systems are separate emitters,
+//so the indexes can and should be equal at times.
+// If we merge them to a single emitter we should add this check back in.
+if (IndexToUse.x >= 0 && IndexToUse.x < NumCells.x && 
+IndexToUse.y >= 0 && IndexToUse.y < NumCells.y && 
+IndexToUse.z >= 0 && IndexToUse.z < NumCells.z && 
+/*CurrNeighborIdx != InstanceIdx && */CurrNeighborIdx != -1 && dist > 1e-5)
+{
+bool otherUnyeilding = false;
+TotalMassPercentage =1.0;
 
-			if ( Overlap > 1e-5)
-			{
-				NumberOfNeighbors+=1;
-				displayCount = NumberOfNeighbors;
-				bool NeighborUnyieldResults;
-				DirectReads.GetBoolByIndex<Attribute="Unyielding">(CurrNeighborIdx, myBool, NeighborUnyieldResults);
+if ( Overlap > 1e-5)
+{
+NumberOfNeighbors+=1;
+displayCount = NumberOfNeighbors;
+bool NeighborUnyieldResults;
+DirectReads.GetBoolByIndex<Attribute="Unyielding">(CurrNeighborIdx, myBool, NeighborUnyieldResults);
 
-				CollidesOut = true;
+CollidesOut = true;
 
-				float OtherMass;
-				DirectReads.GetFloatByIndex<Attribute="Mass">(CurrNeighborIdx, myBool, OtherMass);
+float OtherMass;
+DirectReads.GetFloatByIndex<Attribute="Mass">(CurrNeighborIdx, myBool, OtherMass);
 
-				// 1 moves this particle, 0 moves the other, .5 moves both
+// 1 moves this particle, 0 moves the other, .5 moves both
 
-				TotalMassPercentage = Mass / (Mass + OtherMass); 
+TotalMassPercentage = Mass / (Mass + OtherMass); 
 
-				if ( NeighborUnyieldResults && Unyielding ){ // Both this particle and the other are unyielding
-					TotalMassPercentage = TotalMassPercentage; 
-				} 
-				else if ( NeighborUnyieldResults ) { // This particle yields but the other does not
-					TotalMassPercentage = lerp ( TotalMassPercentage, 0.0, UnyeildingMassPercentage); //0
-				} 
-				else if (Unyielding) { // This particle is unyielding but the other is
-					TotalMassPercentage = lerp ( TotalMassPercentage,1.0, UnyeildingMassPercentage); //1
-				}
+if ( NeighborUnyieldResults && Unyielding ){ // Both this particle and the other are unyielding
+TotalMassPercentage = TotalMassPercentage; 
+} 
+else if ( NeighborUnyieldResults ) { // This particle yields but the other does not
+TotalMassPercentage = lerp ( TotalMassPercentage, 0.0, UnyeildingMassPercentage); //0
+} 
+else if (Unyielding) { // This particle is unyielding but the other is
+TotalMassPercentage = lerp ( TotalMassPercentage,1.0, UnyeildingMassPercentage); //1
+}
 
-				// If both are yielding then use the normal ratio
-				FinalOffsetVector += (1.0 - TotalMassPercentage) * Overlap * CollisionNormal; 
-				ConstraintCount += 1;
-			}
-		}      
-	}
+// If both are yielding then use the normal ratio
+FinalOffsetVector += (1.0 - TotalMassPercentage) * Overlap * CollisionNormal; 
+ConstraintCount += 1;
+}
+}
+}
 }
 
 if (ConstraintCount > 0 && IsMobile)
 {
-	OutPosition += 1.0*FinalOffsetVector/ (ConstraintCount * RelaxationAmount);
+OutPosition += 1.0*FinalOffsetVector/ (ConstraintCount * RelaxationAmount);
 
 
-	// Add friction support here
+// Add friction support here
 
 
-	OutVelocity = (OutPosition - PreviousPosition) * InvDt;
+OutVelocity = (OutPosition - PreviousPosition) * InvDt;
 }
 
 #endif
-      </code></pre></details>
-  </li>
-</ol>
-</nav>
-				</section>
+</code></pre>
+        </details>
 
-					<section id="usage">
-<h2 id="usage">Usage</h2>
-<ol>
-  <li>Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)</li>
-  <li>Populate the three neighbor grids based on the Size variable</li>
-  <li>Set up one intra-particle reader (or three in the small emitter, two in the medium, and one in the large if you're using 3 separate emitters. Possibly you can set these up at the system level instead)</li>
-  <li>Set up the three intra-particle checks</li>
-  <li>Set up the medium-to-large shape check</li>
-  <li>Set up the small-to-medium shape check</li>
-</ol>
+        <!-- Picture suggestion: Annotated code screenshot highlighting the early-out (MaxCollisionRadius), the shape branches, and the final position offset calculation. -->
+      </section>
 
-You may need to limit the max speed of smaller particles, or make your box shapes thicker, if you see particles going into boxes.
-					</section>
+      <section id="usage" aria-labelledby="usage-heading">
+        <h2 id="usage-heading">Usage</h2>
+        <ol>
+          <li>Create three neighbor grids, all in the same emitter. (Note: If you're using separate emitters you'll want to create the larger neighbor grids under the system instead)</li>
+          <li>Populate the three neighbor grids based on the Size variable</li>
+          <li>Set up one intra-particle reader (or three in the small emitter, two in the medium, and one in the large if you're using 3 separate emitters. Possibly you can set these up at the system level instead)</li>
+          <li>Set up the three intra-particle checks</li>
+          <li>Set up the medium-to-large shape check</li>
+          <li>Set up the small-to-medium shape check</li>
+        </ol>
+        <p>You may need to limit the max speed of smaller particles, or make your box shapes thicker, if you see particles going into boxes.</p>
+        <!-- Picture suggestion: Niagara screenshot with three Neighbor Grid modules configured, and the reader modules wired for small/medium/large tiers. -->
+      </section>
 
-					<section id="future">
-<h2 id="future">Future Improvements</h1>
-<h3>We can make it easier to set up multiple tiers.</h3>
-<ul>
-  <li>Stage 1 (Manual): Combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.</li>
-  <li>Stage 2 (Automatic): Combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want. This may be overkill, especially if large amounts of collision checks start to slow everything down.</li>
-</ul>
-					</section>
-					</main>
-<footer>© 2025 Michael Royalty</footer>
+      <section id="future" aria-labelledby="future-heading">
+        <h2 id="future-heading">Future Improvements</h2>
+        <h3>We can make it easier to set up multiple tiers.</h3>
+        <ul>
+          <li>Stage 1 (Manual): Combine the intra-particle reader to take multiple particle readers and neighbor grids. We can have one intra-particle reader scratch for 2 sizes, and one for 3 sizes.</li>
+          <li>Stage 2 (Automatic): Combine the multiple readers and neighbor grids into an array. Then we can have as many sizes as we want. This may be overkill, especially if large amounts of collision checks start to slow everything down.</li>
+        </ul>
+        <!-- Picture suggestion: Architecture sketch comparing “Manual (2–3 sizes)” vs “Automatic (N sizes)” with module blocks and data flow. -->
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="foot-wrap">
+      <small>© 2025 Michael Royalty</small>
+    </div>
+  </footer>
 </body>
 </html>
